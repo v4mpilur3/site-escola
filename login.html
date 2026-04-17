@@ -4,118 +4,172 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login • MathQuest</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- ✅ Supabase correto -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 text-white flex items-center justify-center">
-  <div class="max-w-md w-full mx-4 bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-10 shadow-2xl">
-    <div class="flex justify-center mb-8">
-      <div class="flex items-center gap-3 text-4xl font-bold">
-        <i class="fa-solid fa-dice-d20 text-yellow-400"></i>
-        MathQuest
+
+<body class="min-h-screen bg-[#0a071f] flex items-center justify-center p-6">
+
+  <div class="w-full max-w-md bg-[#1a1438] rounded-3xl p-10 border border-cyan-400/30 shadow-2xl">
+
+    <!-- Logo -->
+    <div class="flex justify-center mb-10">
+      <div class="flex items-center gap-3">
+        <div class="w-14 h-14 bg-gradient-to-br from-cyan-400 to-pink-500 rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+          ⚡
+        </div>
+        <h1 class="text-4xl font-bold tracking-wider text-white">MATHQUEST</h1>
       </div>
     </div>
 
-    <div class="flex border-b border-white/30 mb-8">
-      <button onclick="switchTab(0)" id="tab-login"
-              class="flex-1 py-4 text-lg font-semibold border-b-4 border-yellow-400">Login</button>
-      <button onclick="switchTab(1)" id="tab-register"
-              class="flex-1 py-4 text-lg font-semibold">Create Account</button>
+    <!-- Tabs -->
+    <div class="flex mb-10 border-b border-gray-700">
+      <button onclick="showLogin()" id="loginTab"
+              class="flex-1 py-4 font-bold text-lg border-b-4 border-cyan-400 text-cyan-400">
+        LOGIN
+      </button>
+      <button onclick="showRegister()" id="registerTab"
+              class="flex-1 py-4 font-bold text-lg text-gray-400">
+        CREATE ACCOUNT
+      </button>
     </div>
 
     <!-- LOGIN -->
-    <div id="login-form">
-      <input id="login-username" type="text" placeholder="Username" 
-             class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 mb-4 text-lg focus:outline-none focus:border-yellow-400">
-      <input id="login-password" type="password" placeholder="Password" 
-             class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 mb-8 text-lg focus:outline-none focus:border-yellow-400">
+    <div id="loginForm">
+      <input id="loginUsername" type="text" placeholder="Username" 
+             class="w-full mb-4 px-6 py-4 bg-[#2a234f] border border-gray-600 rounded-2xl text-white">
+
+      <input id="loginPassword" type="password" placeholder="Password" 
+             class="w-full mb-8 px-6 py-4 bg-[#2a234f] border border-gray-600 rounded-2xl text-white">
+
       <button onclick="loginUser()" 
-              class="w-full bg-yellow-400 text-black font-bold py-5 rounded-3xl text-xl hover:bg-yellow-300 transition">
-        Login
+              class="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-5 rounded-2xl text-xl">
+        LOGIN
       </button>
     </div>
 
     <!-- REGISTER -->
-    <div id="register-form" class="hidden">
-      <input id="register-username" type="text" placeholder="Choose username" 
-             class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 mb-4 text-lg focus:outline-none focus:border-yellow-400">
-      <input id="register-password" type="password" placeholder="Choose password" 
-             class="w-full bg-white/10 border border-white/30 rounded-2xl px-6 py-4 mb-8 text-lg focus:outline-none focus:border-yellow-400">
+    <div id="registerForm" class="hidden">
+      <input id="registerUsername" type="text" placeholder="Choose username" 
+             class="w-full mb-4 px-6 py-4 bg-[#2a234f] border border-gray-600 rounded-2xl text-white">
+
+      <input id="registerPassword" type="password" placeholder="Choose password (min 6 chars)" 
+             class="w-full mb-8 px-6 py-4 bg-[#2a234f] border border-gray-600 rounded-2xl text-white">
+
       <button onclick="createAccount()" 
-              class="w-full bg-yellow-400 text-black font-bold py-5 rounded-3xl text-xl hover:bg-yellow-300 transition">
-        Create Account
+              class="w-full bg-cyan-400 hover:bg-cyan-300 text-black font-bold py-5 rounded-2xl text-xl">
+        CREATE ACCOUNT
       </button>
     </div>
 
-    <p id="message" class="text-center mt-6 text-red-400 font-medium min-h-[28px]"></p>
+    <p id="message" class="text-center mt-8 text-red-400 font-medium min-h-[28px]"></p>
   </div>
 
-  <script>
-    function switchTab(tab) {
-      document.getElementById('login-form').classList.toggle('hidden', tab === 1);
-      document.getElementById('register-form').classList.toggle('hidden', tab === 0);
-      
-      document.getElementById('tab-login').classList.toggle('border-yellow-400', tab === 0);
-      document.getElementById('tab-login').classList.toggle('border-transparent', tab === 1);
-      document.getElementById('tab-register').classList.toggle('border-yellow-400', tab === 1);
-      document.getElementById('tab-register').classList.toggle('border-transparent', tab === 0);
+<script>
+  // ✅ criar cliente supabase corretamente
+  const supabaseClient = supabase.createClient(
+    "https://onkevluevyonvqkrrnwy.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  );
+
+  function showLogin() {
+    loginForm.classList.remove('hidden');
+    registerForm.classList.add('hidden');
+
+    loginTab.classList.add('text-cyan-400','border-cyan-400');
+    loginTab.classList.remove('text-gray-400');
+
+    registerTab.classList.remove('text-cyan-400','border-cyan-400');
+    registerTab.classList.add('text-gray-400');
+  }
+
+  function showRegister() {
+    loginForm.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+
+    registerTab.classList.add('text-cyan-400','border-cyan-400');
+    registerTab.classList.remove('text-gray-400');
+
+    loginTab.classList.remove('text-cyan-400','border-cyan-400');
+    loginTab.classList.add('text-gray-400');
+  }
+
+  async function createAccount() {
+    console.log("clicked create account");
+
+    const username = registerUsername.value.trim();
+    const password = registerPassword.value.trim();
+    const message = document.getElementById('message');
+
+    message.textContent = "";
+    message.style.color = "#f87171";
+
+    if (username.length < 3) {
+      message.textContent = "Username must have at least 3 characters";
+      return;
     }
 
-    function saveUsers(users) {
-      localStorage.setItem('mathquest_users', JSON.stringify(users));
+    if (password.length < 6) {
+      message.textContent = "Password must have at least 6 characters";
+      return;
     }
 
-    function getUsers() {
-      return JSON.parse(localStorage.getItem('mathquest_users')) || [];
+    const fakeEmail = username.toLowerCase() + "@mathquest.local";
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email: fakeEmail,
+      password: password
+    });
+
+    if (error) {
+      message.textContent = error.message;
+    } else {
+      await supabaseClient.from('profiles').insert({
+        id: data.user.id,
+        username: username
+      });
+
+      message.style.color = "#4ade80";
+      message.textContent = "✅ Account created!";
+
+      setTimeout(showLogin, 1500);
     }
+  }
 
-    function createAccount() {
-      const username = document.getElementById('register-username').value.trim();
-      const password = document.getElementById('register-password').value.trim();
-      const message = document.getElementById('message');
+  async function loginUser() {
+    const username = loginUsername.value.trim();
+    const password = loginPassword.value.trim();
+    const message = document.getElementById('message');
 
-      if (!username || !password) {
-        message.textContent = "Fill all fields!";
-        return;
-      }
+    message.textContent = "";
 
-      const users = getUsers();
-      if (users.find(u => u.username === username)) {
-        message.textContent = "Username already exists!";
-        return;
-      }
+    const fakeEmail = username.toLowerCase() + "@mathquest.local";
 
-      users.push({ username, password });
-      saveUsers(users);
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email: fakeEmail,
+      password: password
+    });
 
-      message.classList.add('text-green-400');
-      message.textContent = "Account created! You can now login.";
-      
-      setTimeout(() => switchTab(0), 1500);
+    if (error) {
+      message.textContent = "Invalid username or password";
+    } else {
+      localStorage.setItem('mathquest_current_user', username);
+
+      message.style.color = "#4ade80";
+      message.textContent = "✅ Login successful!";
+
+      setTimeout(() => window.location.href = "index.html", 1000);
     }
+  }
 
-    function loginUser() {
-      const username = document.getElementById('login-username').value.trim();
-      const password = document.getElementById('login-password').value.trim();
-      const message = document.getElementById('message');
+  // redirect se já logado
+  if (localStorage.getItem('mathquest_current_user')) {
+    window.location.href = "index.html";
+  }
+</script>
 
-      const users = getUsers();
-      const user = users.find(u => u.username === username && u.password === password);
-
-      if (user) {
-        localStorage.setItem('mathquest_current_user', username);
-        message.classList.add('text-green-400');
-        message.textContent = "Login successful! Redirecting...";
-        setTimeout(() => window.location.href = 'index.html', 800);
-      } else {
-        message.textContent = "Wrong username or password!";
-      }
-    }
-
-    // Se já estiver logado, vai direto para o site
-    if (localStorage.getItem('mathquest_current_user')) {
-      window.location.href = 'index.html';
-    }
-  </script>
 </body>
 </html>
