@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number Ninja - MathQuest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { background: linear-gradient(135deg, #1e40af, #312e81); }
+    .problem { font-size: 4.8rem; font-weight: 700; text-shadow: 0 10px 30px rgba(0,0,0,0.6); }
+    .option:hover { transform: scale(1.08); background-color: #facc15; color: #1e3a8a; }
+    .correct { background-color: #22c55e !important; color: white !important; }
+    .wrong   { background-color: #ef4444 !important; color: white !important; }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+
+  <div class="max-w-2xl mx-auto px-6 py-8">
+    <div class="flex justify-between items-center mb-10">
+      <div onclick="window.location.href='index.html'" class="flex items-center gap-3 cursor-pointer hover:text-yellow-300">
+        <i class="fa-solid fa-arrow-left text-2xl"></i>
+        <span class="text-xl font-medium">Back to MathQuest</span>
+      </div>
+      <div class="flex items-center gap-10 text-2xl font-medium">
+        <div>Score: <span id="score" class="text-yellow-400">0</span></div>
+        <div>Time: <span id="timer" class="text-yellow-400">2:30</span></div>
+      </div>
+    </div>
+
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold mb-3">⚡ Number Ninja ⚡</h1>
+      <p class="text-blue-200 text-xl">Answer as many questions as you can!</p>
+    </div>
+
+    <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-14 mb-12 text-center">
+      <div id="problem" class="problem text-yellow-300">12 + 34 = ?</div>
+    </div>
+
+    <div id="options" class="grid grid-cols-2 gap-6"></div>
+
+    <div id="feedback" class="hidden text-center mt-12 text-4xl font-bold"></div>
+
+    <div class="text-center mt-10">
+      <button id="next-btn" onclick="nextQuestion()" 
+              class="hidden bg-yellow-400 hover:bg-yellow-500 text-black font-bold text-2xl px-14 py-6 rounded-3xl">
+        Next Question →
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    let timeLeft = 150;
+    let timerInterval;
+    let currentAnswer = 0;
+    let isAnswered = false;
+    let questionsAnswered = 0;
+    let correctAnswers = 0;
+    const currentUser = localStorage.getItem('mathquest_current_user');
+
+    const scoreEl = document.getElementById('score');
+    const timerEl = document.getElementById('timer');
+    const problemEl = document.getElementById('problem');
+    const optionsEl = document.getElementById('options');
+    const feedbackEl = document.getElementById('feedback');
+    const nextBtn = document.getElementById('next-btn');
+
+    function formatTime(seconds) {
+      const min = Math.floor(seconds / 60);
+      const sec = seconds % 60;
+      return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    }
+
+    function generateProblem() {
+      const operations = ['+', '-', '*'];
+      const op = operations[Math.floor(Math.random() * operations.length)];
+      let a, b, answer;
+
+      if (op === '+') {
+        a = Math.floor(Math.random() * 40) + 10;
+        b = Math.floor(Math.random() * 40) + 10;
+        answer = a + b;
+      } else if (op === '-') {
+        a = Math.floor(Math.random() * 50) + 30;
+        b = Math.floor(Math.random() * 30) + 10;
+        answer = a - b;
+      } else {
+        a = Math.floor(Math.random() * 12) + 4;
+        b = Math.floor(Math.random() * 10) + 3;
+        answer = a * b;
+      }
+
+      currentAnswer = answer;
+
+      let options = [answer];
+      while (options.length < 4) {
+        let wrong = answer + Math.floor(Math.random() * 21) - 10;
+        if (wrong > 0 && wrong !== answer && !options.includes(wrong)) options.push(wrong);
+      }
+      options.sort(() => Math.random() - 0.5);
+
+      problemEl.textContent = `${a} ${op} ${b} = ?`;
+      optionsEl.innerHTML = '';
+
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = `option bg-white/10 backdrop-blur-xl border border-white/30 text-4xl font-bold py-12 rounded-3xl`;
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt, btn);
+        optionsEl.appendChild(btn);
+      });
+
+      isAnswered = false;
+      feedbackEl.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+    }
+
+    function checkAnswer(selected, button) {
+      if (isAnswered) return;
+      isAnswered = true;
+      questionsAnswered++;
+
+      const allButtons = optionsEl.querySelectorAll('button');
+
+      if (selected === currentAnswer) {
+        score += 10;
+        correctAnswers++;
+        scoreEl.textContent = score;
+        feedbackEl.innerHTML = `✅ Correct! +10`;
+        feedbackEl.className = `text-green-400 text-4xl font-bold mt-12`;
+        button.classList.add('correct');
+      } else {
+        feedbackEl.innerHTML = `❌ The answer was <span class="text-yellow-300">${currentAnswer}</span>`;
+        feedbackEl.className = `text-red-400 text-4xl font-bold mt-12`;
+        button.classList.add('wrong');
+        allButtons.forEach(btn => {
+          if (parseInt(btn.textContent) === currentAnswer) btn.classList.add('correct');
+        });
+      }
+
+      feedbackEl.classList.remove('hidden');
+      nextBtn.classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      if (timeLeft > 0) generateProblem();
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = formatTime(timeLeft);
+
+        if (timeLeft <= 30) timerEl.classList.add('text-red-400', 'animate-pulse');
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          endGame();
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      setTimeout(() => {
+        const accuracy = questionsAnswered > 0 ? Math.round((correctAnswers / questionsAnswered) * 100) : 0;
+        
+        alert(`🎉 TIME'S UP!\n\nFinal Score: ${score} points\nQuestions: ${questionsAnswered}\nCorrect: ${correctAnswers}\nAccuracy: ${accuracy}%`);
+
+        // Guardar no leaderboard
+        if (currentUser) {
+          let lb = JSON.parse(localStorage.getItem('mathquest_leaderboard')) || [];
+          lb.push({ username: currentUser, game: "Number Ninja", score: score, date: new Date().toISOString() });
+          localStorage.setItem('mathquest_leaderboard', JSON.stringify(lb));
+        }
+
+        if (confirm("Play again?")) location.reload();
+        else window.location.href = 'index.html';
+      }, 600);
+    }
+
+    window.onload = () => {
+      if (!currentUser) {
+        alert("You must be logged in!");
+        window.location.href = 'login.html';
+        return;
+      }
+      scoreEl.textContent = '0';
+      timerEl.textContent = formatTime(timeLeft);
+      generateProblem();
+      startTimer();
+    };
+  </script>
+</body>
+</html>

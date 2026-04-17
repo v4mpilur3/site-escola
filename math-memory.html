@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Memory - MathQuest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .card {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+    .card.flipped {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      font-weight: bold;
+    }
+    .card-front {
+      background: linear-gradient(135deg, #1e40af, #3b82f6);
+      color: white;
+    }
+    .card-back {
+      background: white;
+      color: #1e3a8a;
+      transform: rotateY(180deg);
+    }
+    .matched {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 text-white">
+
+  <div class="max-w-5xl mx-auto px-6 py-8">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-10">
+      <div onclick="window.location.href='index.html'" 
+           class="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition">
+        <i class="fa-solid fa-arrow-left text-2xl"></i>
+        <span class="text-xl font-medium">Back to MathQuest</span>
+      </div>
+      
+      <div class="text-center">
+        <h1 class="text-5xl font-bold flex items-center justify-center gap-4">
+          🧠 Math Memory
+        </h1>
+        <p class="text-blue-200 mt-2">Match the expression with the correct result!</p>
+      </div>
+
+      <div class="text-right">
+        <div class="text-2xl">Score: <span id="score" class="text-yellow-400 font-bold">0</span></div>
+        <div class="text-sm text-blue-200">Pairs found: <span id="pairs">0</span>/8</div>
+      </div>
+    </div>
+
+    <!-- Grid do jogo -->
+    <div id="game-board" 
+         class="grid grid-cols-4 gap-4 max-w-2xl mx-auto aspect-square">
+      <!-- Cartas geradas pelo JavaScript -->
+    </div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="hidden text-center mt-12 text-4xl font-bold"></div>
+
+    <div class="text-center mt-10">
+      <button onclick="restartGame()" 
+              class="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-10 py-4 rounded-3xl text-xl transition">
+        Play Again
+      </button>
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    let flippedCards = [];
+    let matchedPairs = 0;
+    let canFlip = true;
+    let currentUser = localStorage.getItem('mathquest_current_user');
+
+    const scoreEl = document.getElementById('score');
+    const pairsEl = document.getElementById('pairs');
+    const boardEl = document.getElementById('game-board');
+    const feedbackEl = document.getElementById('feedback');
+
+    // Expressões e resultados (8 pares)
+    const expressions = [
+      { expr: "12 + 8", result: "20" },
+      { expr: "25 - 9", result: "16" },
+      { expr: "7 × 6",  result: "42" },
+      { expr: "36 ÷ 4", result: "9" },
+      { expr: "15 + 17", result: "32" },
+      { expr: "50 - 23", result: "27" },
+      { expr: "8 × 9",  result: "72" },
+      { expr: "81 ÷ 9", result: "9" }
+    ];
+
+    let cards = [];
+
+    function createCards() {
+      cards = [];
+      
+      expressions.forEach(item => {
+        cards.push({ type: 'expr', value: item.expr, match: item.result });
+        cards.push({ type: 'result', value: item.result, match: item.expr });
+      });
+
+      // Embaralhar as cartas
+      cards.sort(() => Math.random() - 0.5);
+    }
+
+    function renderBoard() {
+      boardEl.innerHTML = '';
+      
+      cards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = 'card';
+        cardElement.dataset.index = index;
+        
+        cardElement.innerHTML = `
+          <div class="card-front">
+            <i class="fa-solid fa-question"></i>
+          </div>
+          <div class="card-back">
+            ${card.value}
+          </div>
+        `;
+        
+        cardElement.addEventListener('click', () => flipCard(cardElement, index));
+        boardEl.appendChild(cardElement);
+      });
+    }
+
+    function flipCard(cardElement, index) {
+      if (!canFlip || flippedCards.length >= 2 || cardElement.classList.contains('flipped') || cardElement.classList.contains('matched')) {
+        return;
+      }
+
+      cardElement.classList.add('flipped');
+      flippedCards.push({ element: cardElement, index: index, value: cards[index].value, match: cards[index].match });
+
+      if (flippedCards.length === 2) {
+        canFlip = false;
+        checkMatch();
+      }
+    }
+
+    function checkMatch() {
+      const [first, second] = flippedCards;
+
+      if (first.match === second.value) {
+        // Match!
+        first.element.classList.add('matched');
+        second.element.classList.add('matched');
+        
+        score += 20;
+        scoreEl.textContent = score;
+        matchedPairs++;
+        pairsEl.textContent = matchedPairs;
+
+        feedbackEl.textContent = "✅ Perfect Match!";
+        feedbackEl.className = "text-green-400 text-4xl font-bold";
+
+        flippedCards = [];
+        canFlip = true;
+
+        if (matchedPairs === 8) {
+          setTimeout(() => endGame(), 800);
+        }
+      } else {
+        // Wrong match
+        setTimeout(() => {
+          first.element.classList.remove('flipped');
+          second.element.classList.remove('flipped');
+          flippedCards = [];
+          canFlip = true;
+        }, 1000);
+      }
+    }
+
+    function endGame() {
+      feedbackEl.innerHTML = `🎉 Congratulations!<br>You completed the game with <span class="text-yellow-400">${score}</span> points!`;
+      feedbackEl.classList.remove('hidden');
+
+      // Salvar no leaderboard
+      if (currentUser) {
+        let leaderboard = JSON.parse(localStorage.getItem('mathquest_leaderboard')) || [];
+        leaderboard.push({
+          username: currentUser,
+          game: "Math Memory",
+          score: score,
+          date: new Date().toISOString()
+        });
+        localStorage.setItem('mathquest_leaderboard', JSON.stringify(leaderboard));
+      }
+    }
+
+    function restartGame() {
+      score = 0;
+      matchedPairs = 0;
+      flippedCards = [];
+      canFlip = true;
+      
+      scoreEl.textContent = '0';
+      pairsEl.textContent = '0';
+      feedbackEl.classList.add('hidden');
+
+      createCards();
+      renderBoard();
+    }
+
+    // Iniciar o jogo
+    window.onload = () => {
+      if (!currentUser) {
+        alert("You must be logged in to play!");
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      createCards();
+      renderBoard();
+    };
+  </script>
+</body>
+</html>

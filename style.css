@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.section {
+  min-height: 85vh;
+}
+
+.game-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.neon-text {
+  animation: neon-flicker 1.5s infinite alternate;
+}
+
+@keyframes neon-flicker {
+  0%, 19% { text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #c026d3; }
+  20%, 24% { text-shadow: none; }
+  25%, 100% { text-shadow: 0 0 10px #22d3ee, 0 0 20px #22d3ee, 0 0 40px #c026d3; }
+}

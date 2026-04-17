@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Equation Quest - MathQuest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    }
+    .equation {
+      font-size: 4.5rem;
+      font-weight: 700;
+    }
+    .option:hover {
+      transform: scale(1.08);
+      background-color: #facc15;
+      color: #312e81;
+    }
+    .correct { background-color: #22c55e !important; color: white !important; }
+    .wrong   { background-color: #ef4444 !important; color: white !important; }
+  </style>
+</head>
+<body class="min-h-screen text-white">
+
+  <div class="max-w-2xl mx-auto px-6 py-8">
+
+    <div class="flex justify-between items-center mb-10">
+      <div onclick="window.location.href='index.html'" 
+           class="flex items-center gap-3 cursor-pointer hover:text-yellow-300 transition">
+        <i class="fa-solid fa-arrow-left text-2xl"></i>
+        <span class="text-xl font-medium">Back to MathQuest</span>
+      </div>
+      
+      <div class="flex items-center gap-8 text-xl">
+        <div>Question: <span id="question-count" class="text-yellow-400 font-bold">1/20</span></div>
+        <div>Time: <span id="timer" class="text-yellow-400 font-bold">90</span>s</div>
+      </div>
+    </div>
+
+    <div class="text-center mb-12">
+      <h1 class="text-5xl font-bold mb-3">📐 Equation Quest</h1>
+      <p class="text-blue-200 text-xl">Answer all 20 equations correctly as fast as you can!</p>
+    </div>
+
+    <!-- Equação -->
+    <div class="bg-white/10 backdrop-blur-2xl border border-white/20 rounded-3xl p-16 mb-12 text-center">
+      <div id="equation" class="equation text-yellow-300">x + 12 = 25</div>
+    </div>
+
+    <!-- Opções -->
+    <div id="options" class="grid grid-cols-2 gap-6"></div>
+
+    <!-- Feedback -->
+    <div id="feedback" class="hidden text-center mt-12 text-4xl font-bold"></div>
+
+  </div>
+
+  <script>
+    let timeLeft = 90;
+    let timerInterval;
+    let currentQuestion = 1;
+    let startTime = Date.now();
+    let currentAnswer = 0;
+    let isAnswered = false;
+    const currentUser = localStorage.getItem('mathquest_current_user');
+
+    const timerEl = document.getElementById('timer');
+    const questionCountEl = document.getElementById('question-count');
+    const equationEl = document.getElementById('equation');
+    const optionsEl = document.getElementById('options');
+    const feedbackEl = document.getElementById('feedback');
+
+    function generateEquation() {
+      const types = ['+', '-', '×', '÷'];
+      const type = types[Math.floor(Math.random() * types.length)];
+
+      let a, b, answer, equationText;
+
+      switch(type) {
+        case '+':
+          a = Math.floor(Math.random() * 30) + 10;
+          b = Math.floor(Math.random() * 30) + 10;
+          answer = a + b;
+          equationText = `${a} + ${b} = ?`;
+          break;
+        case '-':
+          a = Math.floor(Math.random() * 50) + 30;
+          b = Math.floor(Math.random() * 30) + 10;
+          answer = a - b;
+          equationText = `${a} - ${b} = ?`;
+          break;
+        case '×':
+          a = Math.floor(Math.random() * 12) + 4;
+          b = Math.floor(Math.random() * 10) + 3;
+          answer = a * b;
+          equationText = `${a} × ${b} = ?`;
+          break;
+        case '÷':
+          answer = Math.floor(Math.random() * 12) + 4;
+          b = Math.floor(Math.random() * 8) + 2;
+          a = answer * b;
+          equationText = `${a} ÷ ${b} = ?`;
+          break;
+      }
+
+      currentAnswer = answer;
+      equationEl.textContent = equationText;
+
+      // Gerar 4 opções
+      let options = [answer];
+      while (options.length < 4) {
+        let wrong = answer + (Math.floor(Math.random() * 19) - 9);
+        if (wrong > 0 && wrong !== answer && !options.includes(wrong)) {
+          options.push(wrong);
+        }
+      }
+      options.sort(() => Math.random() - 0.5);
+
+      optionsEl.innerHTML = '';
+      options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = `option bg-white/10 backdrop-blur-xl border border-white/30 text-4xl font-bold py-12 rounded-3xl w-full`;
+        btn.textContent = opt;
+        btn.onclick = () => checkAnswer(opt, btn);
+        optionsEl.appendChild(btn);
+      });
+
+      isAnswered = false;
+      feedbackEl.classList.add('hidden');
+    }
+
+    function checkAnswer(selected, button) {
+      if (isAnswered) return;
+      isAnswered = true;
+
+      const allButtons = optionsEl.querySelectorAll('button');
+
+      if (selected === currentAnswer) {
+        button.classList.add('correct');
+
+        if (currentQuestion < 20) {
+          currentQuestion++;
+          questionCountEl.textContent = `${currentQuestion}/20`;
+          setTimeout(generateEquation, 800);
+        } else {
+          // Completou as 20 corretamente!
+          finishGame(true);
+        }
+      } else {
+        // Errou → Perde o jogo
+        button.classList.add('wrong');
+        allButtons.forEach(btn => {
+          if (parseInt(btn.textContent) === currentAnswer) btn.classList.add('correct');
+        });
+        setTimeout(() => finishGame(false), 1200);
+      }
+    }
+
+    function finishGame(won) {
+      clearInterval(timerInterval);
+      const timeTaken = Math.floor((Date.now() - startTime) / 1000);
+
+      if (won) {
+        feedbackEl.innerHTML = `
+          🎉 CONGRATULATIONS!<br>
+          You completed all 20 equations correctly!<br>
+          <span class="text-yellow-400 text-5xl">Time: ${timeTaken} seconds</span>
+        `;
+        feedbackEl.className = "text-green-400 text-center mt-12 text-4xl font-bold";
+
+        // Guardar na leaderboard (tempo = score, quanto menor melhor)
+        if (currentUser) {
+          let leaderboard = JSON.parse(localStorage.getItem('mathquest_leaderboard')) || [];
+          leaderboard.push({
+            username: currentUser,
+            game: "Equation Quest",
+            score: timeTaken,           // tempo em segundos
+            date: new Date().toISOString()
+          });
+          localStorage.setItem('mathquest_leaderboard', JSON.stringify(leaderboard));
+        }
+      } else {
+        feedbackEl.innerHTML = `❌ You made a mistake!<br>Game Over`;
+        feedbackEl.className = "text-red-400 text-center mt-12 text-4xl font-bold";
+      }
+
+      feedbackEl.classList.remove('hidden');
+
+      setTimeout(() => {
+        if (confirm(won ? `Amazing! You finished in ${timeTaken} seconds!\n\nPlay again?` : "Game Over! Play again?")) {
+          location.reload();
+        } else {
+          window.location.href = 'index.html';
+        }
+      }, 1500);
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        timerEl.textContent = timeLeft;
+
+        if (timeLeft <= 20) {
+          timerEl.classList.add('text-red-400', 'animate-pulse');
+        }
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          finishGame(false); // Tempo acabou = perdeu
+        }
+      }, 1000);
+    }
+
+    // Iniciar jogo
+    window.onload = () => {
+      if (!currentUser) {
+        alert("You must be logged in to play!");
+        window.location.href = 'login.html';
+        return;
+      }
+
+      startTime = Date.now();
+      questionCountEl.textContent = `1/20`;
+      generateEquation();
+      startTimer();
+    };
+  </script>
+</body>
+</html>
