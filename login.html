@@ -7,8 +7,8 @@
 
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- ✅ Supabase correto -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body class="min-h-screen bg-[#0a071f] flex items-center justify-center p-6">
@@ -69,11 +69,15 @@
   </div>
 
 <script>
-  // ✅ criar cliente supabase corretamente
-  const supabaseClient = supabase.createClient(
+  // ✅ INIT CORRETO
+  const { createClient } = supabase;
+
+  const supabaseClient = createClient(
     "https://onkevluevyonvqkrrnwy.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9ua2V2bHVldnlvbnZxa3Jybnd5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDY0NjcsImV4cCI6MjA5MjAyMjQ2N30.n7SSaQu8RQcU2Cv4XiQ_rW_NGVYfv-D_7Cp9Wuj5_-I"
   );
+
+  const message = document.getElementById('message');
 
   function showLogin() {
     loginForm.classList.remove('hidden');
@@ -84,6 +88,8 @@
 
     registerTab.classList.remove('text-cyan-400','border-cyan-400');
     registerTab.classList.add('text-gray-400');
+
+    message.textContent = "";
   }
 
   function showRegister() {
@@ -95,17 +101,16 @@
 
     loginTab.classList.remove('text-cyan-400','border-cyan-400');
     loginTab.classList.add('text-gray-400');
+
+    message.textContent = "";
   }
 
   async function createAccount() {
-    console.log("clicked create account");
-
     const username = registerUsername.value.trim();
     const password = registerPassword.value.trim();
-    const message = document.getElementById('message');
 
-    message.textContent = "";
     message.style.color = "#f87171";
+    message.textContent = "";
 
     if (username.length < 3) {
       message.textContent = "Username must have at least 3 characters";
@@ -126,23 +131,30 @@
 
     if (error) {
       message.textContent = error.message;
-    } else {
-      await supabaseClient.from('profiles').insert({
+      return;
+    }
+
+    // inserir profile com verificação
+    const { error: profileError } = await supabaseClient
+      .from('profiles')
+      .insert({
         id: data.user.id,
         username: username
       });
 
-      message.style.color = "#4ade80";
-      message.textContent = "✅ Account created!";
-
-      setTimeout(showLogin, 1500);
+    if (profileError) {
+      console.error(profileError);
     }
+
+    message.style.color = "#4ade80";
+    message.textContent = "✅ Account created!";
+
+    setTimeout(showLogin, 1500);
   }
 
   async function loginUser() {
     const username = loginUsername.value.trim();
     const password = loginPassword.value.trim();
-    const message = document.getElementById('message');
 
     message.textContent = "";
 
@@ -154,18 +166,20 @@
     });
 
     if (error) {
+      message.style.color = "#f87171";
       message.textContent = "Invalid username or password";
-    } else {
-      localStorage.setItem('mathquest_current_user', username);
-
-      message.style.color = "#4ade80";
-      message.textContent = "✅ Login successful!";
-
-      setTimeout(() => window.location.href = "index.html", 1000);
+      return;
     }
+
+    localStorage.setItem('mathquest_current_user', username);
+
+    message.style.color = "#4ade80";
+    message.textContent = "✅ Login successful!";
+
+    setTimeout(() => window.location.href = "index.html", 1000);
   }
 
-  // redirect se já logado
+  // redirect automático se já logado
   if (localStorage.getItem('mathquest_current_user')) {
     window.location.href = "index.html";
   }
