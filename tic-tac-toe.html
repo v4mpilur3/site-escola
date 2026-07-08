@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tic Tac Toe - MathQuest</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+    }
+    .neon-board {
+      background: rgba(15, 23, 42, 0.95);
+      box-shadow: 0 0 40px rgba(103, 232, 249, 0.6),
+                  inset 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+    .cell {
+      width: 120px;
+      height: 120px;
+      font-size: 5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 4px solid rgba(103, 232, 249, 0.3);
+    }
+    .cell:hover {
+      background: rgba(103, 232, 249, 0.15);
+    }
+    .cell.x {
+      color: #f43f5e;
+      text-shadow: 0 0 20px #f43f5e,
+                   0 0 40px #f43f5e;
+    }
+    .cell.o {
+      color: #22d3ee;
+      text-shadow: 0 0 20px #22d3ee,
+                   0 0 40px #22d3ee;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-white font-mono">
+
+  <div class="max-w-2xl mx-auto px-6 py-8">
+
+    <div class="flex justify-between items-center mb-10">
+      <div onclick="window.location.href='index.html'" 
+           class="flex items-center gap-3 cursor-pointer hover:text-cyan-400 transition">
+        <i class="fa-solid fa-arrow-left text-2xl"></i>
+        <span class="text-xl font-medium">Back to MathQuest</span>
+      </div>
+      
+      <div class="text-center">
+        <h1 class="text-5xl font-bold neon-text">✕ TIC TAC TOE ✕</h1>
+        <p class="text-blue-200">Neon Edition</p>
+      </div>
+
+      <div id="status" class="text-xl font-bold px-6 py-2 bg-white/10 rounded-2xl"></div>
+    </div>
+
+    <!-- Dificuldades -->
+    <div class="flex justify-center gap-4 mb-8">
+      <button onclick="setDifficulty(0)" id="diff-easy"
+              class="px-6 py-3 rounded-2xl font-bold transition">FÁCIL</button>
+      <button onclick="setDifficulty(1)" id="diff-medium"
+              class="px-6 py-3 rounded-2xl font-bold transition bg-cyan-400 text-black">MÉDIO</button>
+      <button onclick="setDifficulty(2)" id="diff-hard"
+              class="px-6 py-3 rounded-2xl font-bold transition">DIFÍCIL</button>
+    </div>
+
+    <!-- Tabuleiro -->
+    <div id="board" class="neon-board grid grid-cols-3 gap-3 p-8 rounded-3xl mx-auto w-fit"></div>
+
+    <!-- Placar -->
+    <div class="flex justify-center gap-12 mt-10 text-2xl">
+      <div class="text-center">
+        <div class="text-rose-400">X (Você)</div>
+        <div id="score-x" class="text-5xl font-bold">0</div>
+      </div>
+      <div class="text-center">
+        <div class="text-cyan-400">O (PC)</div>
+        <div id="score-o" class="text-5xl font-bold">0</div>
+      </div>
+    </div>
+
+    <div class="flex justify-center gap-6 mt-12">
+      <button onclick="newGame()" 
+              class="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-10 py-4 rounded-3xl text-xl transition">
+        Novo Jogo
+      </button>
+      <button onclick="window.location.href='index.html'" 
+              class="bg-white/20 hover:bg-white/30 px-10 py-4 rounded-3xl text-xl transition">
+        Voltar ao Menu
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let board = Array(9).fill(null);
+    let currentPlayer = 'X';
+    let gameActive = true;
+    let difficulty = 1; // 0 fácil, 1 médio, 2 difícil
+    let scoreX = 0;
+    let scoreO = 0;
+    let currentUser = localStorage.getItem('mathquest_current_user');
+
+    const cells = [];
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const scoreXEl = document.getElementById('score-x');
+    const scoreOEl = document.getElementById('score-o');
+
+    const winningConditions = [
+      [0,1,2], [3,4,5], [6,7,8],
+      [0,3,6], [1,4,7], [2,5,8],
+      [0,4,8], [2,4,6]
+    ];
+
+    function createBoard() {
+      boardEl.innerHTML = '';
+      cells.length = 0;
+      
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.addEventListener('click', handleCellClick);
+        boardEl.appendChild(cell);
+        cells.push(cell);
+      }
+    }
+
+    function handleCellClick(e) {
+      const index = parseInt(e.target.dataset.index);
+      if (!gameActive || board[index] || currentPlayer !== 'X') return;
+      makeMove(index, 'X');
+    }
+
+    function makeMove(index, player) {
+      board[index] = player;
+      cells[index].textContent = player;
+      cells[index].classList.add(player.toLowerCase());
+
+      if (checkWin(player)) {
+        handleWin(player);
+        return;
+      }
+
+      if (board.every(cell => cell !== null)) {
+        handleDraw();
+        return;
+      }
+
+      currentPlayer = player === 'X' ? 'O' : 'X';
+      updateStatus();
+
+      if (currentPlayer === 'O' && gameActive) {
+        setTimeout(aiMove, 400);
+      }
+    }
+
+    function aiMove() {
+      let move;
+      if (difficulty === 0) {
+        const empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+        move = empty[Math.floor(Math.random() * empty.length)];
+      } else if (difficulty === 1) {
+        move = Math.random() < 0.7 ? bestMove() : randomMove();
+      } else {
+        move = bestMove();
+      }
+
+      if (move !== null) makeMove(move, 'O');
+    }
+
+    function randomMove() {
+      const empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+      return empty[Math.floor(Math.random() * empty.length)];
+    }
+
+    function bestMove() {
+      let bestScore = -Infinity;
+      let move = null;
+      for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+          board[i] = 'O';
+          let score = minimax(board, 0, false);
+          board[i] = null;
+          if (score > bestScore) {
+            bestScore = score;
+            move = i;
+          }
+        }
+      }
+      return move;
+    }
+
+    function minimax(newBoard, depth, isMaximizing) {
+      if (checkWin('O')) return 10 - depth;
+      if (checkWin('X')) return depth - 10;
+      if (newBoard.every(cell => cell !== null)) return 0;
+
+      if (isMaximizing) {
+        let best = -Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (newBoard[i] === null) {
+            newBoard[i] = 'O';
+            best = Math.max(best, minimax(newBoard, depth + 1, false));
+            newBoard[i] = null;
+          }
+        }
+        return best;
+      } else {
+        let best = Infinity;
+        for (let i = 0; i < 9; i++) {
+          if (newBoard[i] === null) {
+            newBoard[i] = 'X';
+            best = Math.min(best, minimax(newBoard, depth + 1, true));
+            newBoard[i] = null;
+          }
+        }
+        return best;
+      }
+    }
+
+    function checkWin(player) {
+      return winningConditions.some(cond => cond.every(i => board[i] === player));
+    }
+
+    function handleWin(player) {
+      gameActive = false;
+      if (player === 'X') {
+        scoreX++;
+        scoreXEl.textContent = scoreX;
+        statusEl.textContent = "🎉 Você Ganhou!";
+        statusEl.className = "text-green-400 text-2xl font-bold px-6 py-2 bg-white/10 rounded-2xl";
+      } else {
+        scoreO++;
+        scoreOEl.textContent = scoreO;
+        statusEl.textContent = "💻 Computador Ganhou";
+        statusEl.className = "text-rose-400 text-2xl font-bold px-6 py-2 bg-white/10 rounded-2xl";
+      }
+    }
+
+    function handleDraw() {
+      gameActive = false;
+      statusEl.textContent = "Empate!";
+      statusEl.className = "text-yellow-400 text-2xl font-bold px-6 py-2 bg-white/10 rounded-2xl";
+    }
+
+    function updateStatus() {
+      statusEl.textContent = currentPlayer === 'X' ? "Sua vez (X)" : "Computador a jogar...";
+    }
+
+    function setDifficulty(level) {
+      difficulty = level;
+      document.querySelectorAll('button[id^="diff-"]').forEach(b => b.classList.remove('bg-cyan-400', 'text-black'));
+      document.getElementById(['diff-easy','diff-medium','diff-hard'][level]).classList.add('bg-cyan-400', 'text-black');
+    }
+
+    function newGame() {
+      board = Array(9).fill(null);
+      currentPlayer = 'X';
+      gameActive = true;
+      createBoard();
+      updateStatus();
+    }
+
+    window.onload = () => {
+      if (!currentUser) {
+        alert("Você precisa estar logado!");
+        window.location.href = 'login.html';
+        return;
+      }
+      createBoard();
+      setDifficulty(1);
+      newGame();
+    };
+  </script>
+</body>
+</html>
