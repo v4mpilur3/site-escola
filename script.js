@@ -86,6 +86,22 @@ const games = [
       • If you complete all 20 correctly → You win!<br><br>
       <strong>The faster you finish, the better your position on the leaderboard!</strong>
     `
+  },
+  {
+    id: 4,
+    title: "Tic Tac Toe",
+    description: "3 em linha neon vs Computador",
+    icon: "✕",
+    difficulty: "Medium",
+    color: "from-rose-400 to-cyan-500",
+    file: "tic-tac-toe.html",
+    instructions: `
+      <strong>How to Play:</strong><br><br>
+      • You are X.<br>
+      • The computer is O.<br>
+      • Get three in a row to win.<br>
+      • Choose the difficulty before starting.
+    `
   }
 ];
 
@@ -162,12 +178,14 @@ function renderLeaderboard() {
   const ninjaScores    = allScores.filter(s => s.game === "Number Ninja");
   const memoryScores   = allScores.filter(s => s.game === "Math Memory");
   const equationScores = allScores.filter(s => s.game === "Equation Quest");
+  const ticTacToeScores = allScores.filter(s => s.game === "Tic Tac Toe");
 
   let html = `<h2 class="text-4xl font-bold text-center mb-12">🏆 Leaderboards</h2>`;
 
   html += createGameLeaderboard("Number Ninja ⚡", ninjaScores, "Highest Score (Points)", true);
   html += createGameLeaderboard("Math Memory 🧠", memoryScores, "Highest Score (Points)", true);
   html += createGameLeaderboard("Equation Quest 📐", equationScores, "Best Time (Lower is better)", false);
+  html += createGameLeaderboard("Tic Tac Toe ✕", ticTacToeScores, "Highest Score (Points)", true);
 
   container.innerHTML = html;
 }
