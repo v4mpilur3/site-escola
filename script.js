@@ -90,7 +90,7 @@ const games = [
   {
     id: 4,
     title: "Tic Tac Toe",
-    description: "3 em linha neon vs Computador",
+    description: "Play against the computer and be the first to get three in a row!",
     icon: "✕",
     difficulty: "Medium",
     color: "from-rose-400 to-cyan-500",
